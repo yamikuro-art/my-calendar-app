@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>カレンダーアプリ</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+</head>
+<body>
+    <h1>カレンダーデータ入力アプリ</h1>
+    <form id="calendar-form">
+        <label for="year">年：</label>
+        <input type="text" id="year" name="year" maxlength="4" size="4">
+        <label for="month">月：</label>
+        <input type="text" id="month" name="month" maxlength="2" size="2">
+        <button type="button" id="show-calendar-btn">カレンダー表示</button>
+    </form>
+    <div id="calendar-container"></div>
+    <button id="save-btn">Excelに保存</button>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
