@@ -1,8 +1,9 @@
-from flask import Flask, request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, send_file
 import pandas as pd
 import os
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill
+import io
 
 app = Flask(__name__)
 
@@ -29,42 +30,39 @@ def save_to_excel():
         # Excelファイルにデータを保存
         file_path = os.path.join(directory, 'calendar_data.xlsx')
 
-        with pd.ExcelWriter(file_path, engine='openpyxl') as writer:
-            df.to_excel(writer, index=False, sheet_name='Calendar Data')
-            workbook = writer.book
-            worksheet = writer.sheets['Calendar Data']
+        # メモリ内のバッファを使用して、Excelファイルを作成
+        with io.BytesIO() as output:
+            with pd.ExcelWriter(output, engine='openpyxl') as writer:
+                df.to_excel(writer, index=False, sheet_name='Calendar Data')
+                workbook = writer.book
+                worksheet = writer.sheets['Calendar Data']
 
-            # フォントとアライメントのスタイルを設定
-            header_font = Font(size=12, bold=True)
-            cell_font = Font(size=10)
-            alignment = Alignment(horizontal='center', vertical='center')
-            fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")  # 休日のセルに色をつける
+                # フォントとアライメントのスタイルを設定
+                header_font = Font(size=12, bold=True)
+                cell_font = Font(size=10)
+                alignment = Alignment(horizontal='center', vertical='center')
+                fill = PatternFill(start_color="FFFF99", end_color="FFFF99", fill_type="solid")  # 休日のセルに色をつける
 
-            # ヘッダーのスタイルを適用
-            for cell in worksheet[1]:
-                cell.font = header_font
-                cell.alignment = alignment
-
-            # データセルのスタイルを適用
-            for row in worksheet.iter_rows(min_row=2, max_row=len(df) + 1, min_col=1, max_col=len(df.columns)):
-                for cell in row:
-                    cell.font = cell_font
+                # ヘッダーのスタイルを適用
+                for cell in worksheet[1]:
+                    cell.font = header_font
                     cell.alignment = alignment
-                    if row[3].value == 'Yes':  # isHoliday列が'Yes'の場合
-                        cell.fill = fill
 
-        return jsonify({'success': True, 'message': 'Data successfully saved to Excel.'})
+                # データセルのスタイルを適用
+                for row in worksheet.iter_rows(min_row=2, max_row=len(df) + 1, min_col=1, max_col=len(df.columns)):
+                    for cell in row:
+                        cell.font = cell_font
+                        cell.alignment = alignment
+                        if row[3].value == 'Yes':  # isHoliday列が'Yes'の場合
+                            cell.fill = fill
+
+            # Excelファイルをバッファから取得
+            output.seek(0)
+            return send_file(output, attachment_filename="calendar_data.xlsx", as_attachment=True)
+
     except Exception as e:
         print(f"Error saving Excel file: {e}")
         return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True)
-
-
-
-
-
-
-
-
